@@ -1,6 +1,6 @@
 {
   "name": "jstracer",
-  "version": "1.2.6",
+  "version": "1.2.8",
   "description": "js tracer for the debug and file information",
   "main": "lib/index.js",
   "repository": "http://github.com/jeppeter/jstracer",
@@ -25,6 +25,10 @@
   "keywords": [
     "trace",
     "log"
+  ],
+  "files" : [
+    "lib/",
+    "README.md"
   ],
   "author": "jeppeter@gmail.com",
   "license": "ISC"

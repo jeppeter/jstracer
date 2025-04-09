@@ -1,20 +1,22 @@
+/*eslint strict: false */
 const tracer = require('tracer');
 const util = require('util');
 const fs = require('fs');
 
-const add_write_streams = (self, arfiles, isappend) => {
+const add_write_streams = function (self, arfiles, isappend) {
+    'use strict';
     let openflags;
     openflags = 'w+';
     if (isappend) {
         openflags = 'a+';
     }
-    arfiles.forEach(elm => {
+    arfiles.forEach(function (elm) {
         const ws = fs.createWriteStream(elm, {
             flags: openflags,
             defaultEncoding: 'utf8',
-            autoclose: true,
+            autoclose: true
         });
-        ws.on('error', err => {
+        ws.on('error', function (err) {
             let i;
             console.error('error on %s (%s)', elm, err);
             for (i = 0; i < self.writeStreams.length; i += 1) {
@@ -24,7 +26,7 @@ const add_write_streams = (self, arfiles, isappend) => {
                 }
             }
         });
-        ws.on('data', data => {
+        ws.on('data', function (data) {
             if (!self.noconsole) {
                 console.log('data (%s) %s', data, elm);
             }
@@ -40,15 +42,15 @@ const add_write_streams = (self, arfiles, isappend) => {
     });
 };
 
-const parse_line_func = (l) => {
+const parse_line_func = function (l) {
     'use strict';
-    var stk = null;
-    var findexpr1 = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\(([^\\)]+)\\)$');
-    var findexpr2 = new RegExp('^\\s+at\\s+([^\\s]+)$');
-    var findexpr3 = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\[([^\\]]+)\\]\\s+\\(([^\\)]+)\\)$');
-    var m1;
-    var linenum;
-    var lastidx, curidx, hasfind = 0;
+    let stk = null;
+    let findexpr1 = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\(([^\\)]+)\\)$');
+    let findexpr2 = new RegExp('^\\s+at\\s+([^\\s]+)$');
+    let findexpr3 = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\[([^\\]]+)\\]\\s+\\(([^\\)]+)\\)$');
+    let m1;
+    let linenum;
+    let lastidx, curidx, hasfind = 0;
     m1 = findexpr1.exec(l);
     //console.error('m1 [%s]', util.inspect(m1, {showHidden:true, depth:null}));
     if (m1 !== undefined && m1 !== null) {
@@ -86,7 +88,7 @@ const parse_line_func = (l) => {
             curidx = m1[1].length;
             lastidx = curidx;
             hasfind = 0;
-            while( hasfind < 2 && curidx > 0) {
+            while (hasfind < 2 && curidx > 0) {
                 curidx -= 1;
                 if (m1[1][curidx] === ':') {
                     hasfind += 1;
@@ -99,8 +101,8 @@ const parse_line_func = (l) => {
             if (curidx === 0) {
                 return null;
             }
-            stk.filename = m1[1].substring(0,curidx);
-            linenum = m1[1].substring(curidx + 1,lastidx);
+            stk.filename = m1[1].substring(0, curidx);
+            linenum = m1[1].substring(curidx + 1, lastidx);
             stk.lineno = parseInt(linenum, 10);
         } else {
             m1 = findexpr3.exec(l);
@@ -111,7 +113,7 @@ const parse_line_func = (l) => {
             curidx = m1[3].length;
             lastidx = curidx;
             hasfind = 0;
-            while( hasfind < 2 && curidx > 0) {
+            while (hasfind < 2 && curidx > 0) {
                 curidx -= 1;
                 if (m1[3][curidx] === ':') {
                     hasfind += 1;
@@ -124,8 +126,8 @@ const parse_line_func = (l) => {
             if (curidx === 0) {
                 return null;
             }
-            stk.filename = m1[3].substring(0,curidx);
-            linenum = m1[3].substring(curidx + 1,lastidx);
+            stk.filename = m1[3].substring(0, curidx);
+            linenum = m1[3].substring(curidx + 1, lastidx);
             stk.lineno = parseInt(linenum, 10);
         }
     }
@@ -134,12 +136,12 @@ const parse_line_func = (l) => {
 };
 
 
-const get_stacks = () => {
+const get_stacks = function () {
     'use strict';
-    var stacks = [];
-    var sarr = [];
-    var idx;
-    var curstk;
+    let stacks = [];
+    let sarr = [];
+    let idx;
+    let curstk;
     try {
         throw new Error('error');
     } catch (e) {
@@ -156,13 +158,13 @@ const get_stacks = () => {
 };
 
 
-const format_string = (...args) => {
-    var rets = '';
-    var callstk=3;
-    var fmtargs = args;
-    var idx;
-    var msgstr;
-    var stks = get_stacks();
+const format_string = function (...args) {
+    let rets = '';
+    let callstk = 3;
+    let fmtargs = args;
+    let idx;
+    let msgstr;
+    let stks = get_stacks();
     /*now we should make format string to the output*/
     if (Array.isArray(args)) {
         if (args.length > 0 && typeof args[0] === 'number') {
@@ -177,7 +179,7 @@ const format_string = (...args) => {
     msgstr = util.format(...fmtargs);
     if (callstk >= stks.length) {
         callstk = stks.length - 1;
-    } 
+    }
     rets = util.format('[%s:%s:%s] %s', stks[callstk].filename, stks[callstk].funcname, stks[callstk].lineno, msgstr);
     return rets;
 };
@@ -186,6 +188,7 @@ const loggerMap = {};
 
 
 function TraceLog(options, name) {
+    'use strict';
     const self = {};
     self.level = 'error';
     self.writeStreams = [];
@@ -196,7 +199,7 @@ function TraceLog(options, name) {
     self.finish_counts = 0;
     self.real_finish_callback = null;
     self.loggerName = name;
-    self.finish_callback = err => {
+    self.finish_callback = function (err) {
         self.finish_counts += 1;
         if (err) {
             if (self.real_finish_callback !== null) {
@@ -212,7 +215,7 @@ function TraceLog(options, name) {
             }
         }
     };
-    self.finish = callback => {
+    self.finish = function (callback) {
         let ws;
         self.finish_need_counts = self.writeStreams.length;
         self.finish_counts = 0;
@@ -241,11 +244,11 @@ function TraceLog(options, name) {
         self.level = options.level;
     }
 
-    if (util.isArray(options.log_files)) {
+    if (Array.isArray(options.log_files)) {
         add_write_streams(self, options.log_files, false);
     }
 
-    if (util.isArray(options.log_appends)) {
+    if (Array.isArray(options.log_appends)) {
         add_write_streams(self, options.log_appends, true);
     }
 
@@ -261,34 +264,34 @@ function TraceLog(options, name) {
             if (!self.noconsole) {
                 process.stderr.write(data.output);
             }
-            self.writeStreams.forEach(elm => {
+            self.writeStreams.forEach(function (elm) {
                 elm.write(data.output);
             });
-        },
+        }
     });
 
 
-    self.trace = (...args) => {
+    self.trace = function (...args) {
         const utilstr = format_string(...args);
         self.innerLogger.trace(utilstr);
     };
 
-    self.debug = (...args) => {
+    self.debug = function (...args) {
         const utilstr = format_string(...args);
         self.innerLogger.debug(utilstr);
     };
 
-    self.info = (...args) => {
+    self.info = function (...args) {
         const utilstr = format_string(...args);
         self.innerLogger.info(utilstr);
     };
 
-    self.warn = (...args) => {
+    self.warn = function (...args) {
         const utilstr = format_string(...args);
         self.innerLogger.warn(utilstr);
     };
 
-    self.error = (...args) => {
+    self.error = function (...args) {
         const utilstr = format_string(...args);
         self.innerLogger.error(utilstr);
     };
@@ -298,7 +301,8 @@ function TraceLog(options, name) {
 }
 
 
-const inner_init = (options, name) => {
+const inner_init = function (options, name) {
+    'use strict';
     const inner_options = options || {};
     let optname = 'root';
     if (name !== undefined) {
@@ -316,7 +320,7 @@ const inner_init = (options, name) => {
 
 module.exports.Init = (options, name) => inner_init(options, name);
 
-module.exports.trace = (...args) => {
+module.exports.trace = function (...args) {
     const logger = inner_init({}, 'root');
     let callstk = 1;
     let fmtargs = args;
@@ -327,7 +331,7 @@ module.exports.trace = (...args) => {
             callstk = args[0];
             callstk += 1;
             fmtargs = [];
-            for (idx = 1; idx < args.length ; idx += 1) {
+            for (idx = 1; idx < args.length; idx += 1) {
                 fmtargs.push(args[idx]);
             }
         }
@@ -336,7 +340,7 @@ module.exports.trace = (...args) => {
     logger.trace(callstk, ...fmtargs);
 };
 
-module.exports.debug = (...args) => {
+module.exports.debug = function (...args) {
     const logger = inner_init({}, 'root');
     let callstk = 1;
     let fmtargs = args;
@@ -347,15 +351,15 @@ module.exports.debug = (...args) => {
             callstk = args[0];
             callstk += 1;
             fmtargs = [];
-            for (idx = 1; idx < args.length ; idx += 1) {
+            for (idx = 1; idx < args.length; idx += 1) {
                 fmtargs.push(args[idx]);
             }
         }
     }
-    logger.debug(callstk,...fmtargs);
+    logger.debug(callstk, ...fmtargs);
 };
 
-module.exports.info = (...args) => {
+module.exports.info = function (...args) {
     const logger = inner_init({}, 'root');
     let callstk = 1;
     let fmtargs = args;
@@ -366,15 +370,15 @@ module.exports.info = (...args) => {
             callstk = args[0];
             callstk += 1;
             fmtargs = [];
-            for (idx = 1; idx < args.length ; idx += 1) {
+            for (idx = 1; idx < args.length; idx += 1) {
                 fmtargs.push(args[idx]);
             }
         }
     }
-    logger.info(callstk,...fmtargs);
+    logger.info(callstk, ...fmtargs);
 };
 
-module.exports.warn = (...args) => {
+module.exports.warn = function (...args) {
     const logger = inner_init({}, 'root');
     let callstk = 1;
     let fmtargs = args;
@@ -385,15 +389,15 @@ module.exports.warn = (...args) => {
             callstk = args[0];
             callstk += 1;
             fmtargs = [];
-            for (idx = 1; idx < args.length ; idx += 1) {
+            for (idx = 1; idx < args.length; idx += 1) {
                 fmtargs.push(args[idx]);
             }
         }
     }
-    logger.warn(callstk,...fmtargs);
+    logger.warn(callstk, ...fmtargs);
 };
 
-module.exports.error = (...args) => {
+module.exports.error = function (...args) {
     const logger = inner_init({}, 'root');
     let callstk = 1;
     let fmtargs = args;
@@ -404,7 +408,7 @@ module.exports.error = (...args) => {
             callstk = args[0];
             callstk += 1;
             fmtargs = [];
-            for (idx = 1; idx < args.length ; idx += 1) {
+            for (idx = 1; idx < args.length; idx += 1) {
                 fmtargs.push(args[idx]);
             }
         }
@@ -413,10 +417,11 @@ module.exports.error = (...args) => {
 };
 
 
-const finish_all_loggers = callback => {
+const finish_all_loggers = function (callback) {
+    'use strict';
     const names = Object.keys(loggerMap);
     if (names.length > 0) {
-        loggerMap[names[0]].finish(err => {
+        loggerMap[names[0]].finish(function (err) {
             if (err !== undefined && err !== null) {
                 callback(err);
                 return;
@@ -431,13 +436,14 @@ const finish_all_loggers = callback => {
     }
 };
 
-module.exports.finish = callback => {
+module.exports.finish = function (callback) {
+    'use strict';
     finish_all_loggers(callback);
 };
 
-module.exports.init_args = parser => {
-    const tracelog_options = `
-    {
+module.exports.init_args = function (parser) {
+    'use strict';
+    const tracelog_options = `{
         "+log" : {
             "appends" : [],
             "files" : [],
@@ -445,13 +451,13 @@ module.exports.init_args = parser => {
             "format" : "<{{title}}> {{message}}\\n"
         },
         "verbose|v" : "+"
-    }
-    `;
+    }`;
     parser.load_command_line_string(tracelog_options);
     return parser;
 };
 
-const set_attr_self_inner = (self, args, prefix) => {
+const set_attr_self_inner = function (self, args, prefix) {
+    'use strict';
     let curkey;
     let i;
     let prefixnew;
@@ -475,7 +481,8 @@ const set_attr_self_inner = (self, args, prefix) => {
     return retself;
 };
 
-module.exports.set_args = (options, name) => {
+module.exports.set_args = function (options, name) {
+    'use strict';
     const logopt = {};
     if (options.verbose >= 4) {
         logopt.level = 'trace';

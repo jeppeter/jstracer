@@ -1,6 +1,6 @@
 {
   "name": "jstracer",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "description": "js tracer for the debug and file information",
   "main": "lib/index.js",
   "repository": "http://github.com/jeppeter/jstracer",
